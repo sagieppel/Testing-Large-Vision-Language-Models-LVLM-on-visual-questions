@@ -11,4 +11,4 @@ In **Quiz.py set path to image dir in in_dir parameter (You cant use the test_im
 Set path to output folder where results will be saved to out_folder.
 Run script.
 
-# More details see [Do large language vision models understand 3D shapes?](https://arxiv.org/pdf/2412.10908).
+## More details see [Do large language vision models understand 3D shapes?](https://arxiv.org/pdf/2412.10908).
