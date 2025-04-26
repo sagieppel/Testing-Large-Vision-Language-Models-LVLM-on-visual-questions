@@ -1,5 +1,0 @@
-open_AI_api_key = "Set API KEY HERE"
-gemini_api_key="Set API KEY HERE"
-claude_api_key =  "Set API KEY HERE"
-grok_api_key = "Set API KEY HERE"
-together_api_key="Set API KEY HERE"
