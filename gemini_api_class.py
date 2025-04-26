@@ -6,11 +6,13 @@ import os
 import base64
 import google.generativeai as genai
 import API_KEYS
-import cv2
 
+from PIL import Image
+import cv2
+import numpy as np
 # Set your API key
 genai.configure(api_key=API_KEYS.gemini_api_key)
-sleep_time=3
+sleep_time=4
 
 import PIL.Image
 
@@ -20,66 +22,91 @@ class gemini_bot():
 
   ###########################Question text image##########################################################################################
   def question_text_image(self,text,image):
-          image_path="temp_im.jpg"
-          cv2.imwrite(image_path,image)
-          img = PIL.Image.open(image_path)
-          for i in range(500):
+          img = Image.fromarray(image[:, :, ::-1])
+          # image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+          #
+          # # Create PIL Image
+          # pil_image = Image.fromarray(i_rgb)
+          # image_path="temp_im.jpg"
+          # cv2.imwrite(image_path,image)
+          # img = PIL.Image.open(image_path)
+          for i in range(800):
+              print("attemept",i,"image question:", text)
               try:
-                    response = self.model.generate_content([img, text])
-                    break
+                  response = self.model.generate_content([img, text])
+                  return response.text
               except:
                   import time
-                  print("Fail contact gemini sleeping ",sleep_time," seconds and retry")
+                  print("attemept",i,"Fail contact gemini sleeping ",sleep_time," seconds and retry")
                   time.sleep(sleep_time)
-          return response.text
+
 ###########################Question text##########################################################################################
   def question_text(self, text):
-      for i in range(500):
+      for i in range(600):
           try:
+              print("\nattemept",i,"text question:",text)
               response = self.model.generate_content([text])
-              break
+              return response.text
           except:
               import time
-              print("Fail contact gemini sleeping ",sleep_time," seconds and retry")
+              print("attemept",i,"Fail contact gemini sleeping ",sleep_time," seconds and retry")
               time.sleep(sleep_time)
-      return response.text
+
 ###########################Full questions############################################################################################
-  def answer_question(self,image):
-      # various
-      queries=[ # the queries will be given in this order the next query will be given only if the model will refuse to answer the previous one
-           ("Which of the panels contain object with identical 3d shape  to the object in panel A. Your answer must come as a single letter"),
-
-         ("Which of the panels contain object that is identical in 3d shape to the object in panel A. Your answer must come as a single letter: B,C,D"),
-
-         ("Carefully analyze the image. In panel A, there is an object with a specific shape. Your task is to identify which other panel (B, C, or D) contains an object that"
-          "\n1) Has the exact same 3d shape as the object in panel A."
-          "\n2) Might Have a different orientation compared to the object in panel A."
-          "\n3) Might have a different texture compared to the object in panel A."
-          "Respond with ONLY the letter of the panel (B, C, or D) that meets all these criteria."),
-
-          (    "The image contain 4 panels (A,B,C,D). "
-            "The each panel contain object. "   
-           "One of the panels C-D contain object that is identical in shape to the object in panel A."# #but  have different  background"#, orientation and texture. "
-           "Which panel is this? Your answer must be a single letter (B,C or D)")]
-
-
-      #-----------------repeat queries until getting correct format of answr (b,c,d)
+  ###########################Full questions############################################################################################
+  def answer_question(self, image, queries):  # Answer question in queries regarding image
+      print("Answer question", queries)
+      # -----------------repeat queries until getting correct format of answer (b,c,d)
       for ii in range(len(queries)):
-          all_text = "\n\n query: " + queries[ii]+"\n"  # use to record full interaction
-          ky = self.question_text_image(queries[ii], image)
-          all_text += str(ii) + ") response:  " + ky +"\n"
-
+          all_text = "\n\n query: " + queries[ii] + "\n"  # use to record full interaction
+          ky = self.question_text_image(queries[ii], image)  # Get answer query+image
+          all_text += str(ii) + ") response:  " + ky + "\n"
+          # ---------------Reduce answer to single letter--------------------------------------------------------
           if len(ky) > 1 or ky.lower() not in ['b', 'c', 'd']:
-              ky=self.question_text("Take the following response and reduce it to a single letter:\n"+ky)
-              all_text += str(ii) +")Take the following response and reduce it to a single letter: response:  " + ky
-              if len(ky)>1:
+              ky = self.question_text(
+                  "Take the following response and reduce it to a single letter which the selected panel letter B,C,D. If no correct panel is mention in the answer write N. Note response of more than single character is an error. \nHere is the text:\n" + ky)
+              all_text += str(
+                  ii) + ") Take the following response and reduce it to a single letter which the selected panel letter B,C,D. If no correct panel is mention in the answer write N. Note response of more than single character is an error. \nHere is the text:\n" + ky
+              if len(ky) > 1:
                   if (" B" in ky) and (" C" not in ky) and (" D" not in ky): ky = "B"
                   if (" B" not in ky) and (" C" in ky) and (" D" not in ky): ky = "C"
                   if (" B" not in ky) and (" C" not in ky) and (" D" in ky): ky = "D"
-                  all_text += str(ii) + ")Extracting answer"+str(ii)
+                  all_text += "\n Automatic Extracting answer: " + str(ky)
 
           if len(ky) and (ky.lower() in ['b', 'c', 'd']):
-               return ky, all_text
+              return ky, all_text
+          print(ii, all_text, "\n\nFailed to get real answer switching to next query if exist", )
+      return ky, all_text
+
+      #################################################################################################################################################
+
+  def answer_question_image_to_text_description(self, image, queries_image, queries_text):
+      '''Answer question by first asking for text description of each panel and then asking second model that only use the text description to answer the question'''
+      print("Answer question", queries_image)
+      # -----------------repeat queries until getting correct format of answr (b,c,d)
+      for ii in range(len(queries_image)):
+          all_text = "\n\n query: " + queries_image[ii] + "\n"  # use to record full interaction
+          ky = self.question_text_image(queries_image[ii], image)
+          all_text += str(ii) + ") response:  " + ky + "\n"
+          if len(ky) != 1 or (ky.lower() not in ['b', 'c', 'd']):
+              print(queries_text[ii] + ky)
+              all_text += "\n\n" + queries_text[ii] + ky
+              ky = self.question_text(queries_text[ii] + ky)
+              all_text += "Response:" + queries_text[ii] + "  " + ky
+              print("Response:", queries_text[ii], "   ", ky)
+
+              all_text += "Take the following response and reduce it to a single letter (B,C,D), if none of the above leave empty:" + ky
+              for i in range(5):
+                  all_text += "\nTRY: " + str(i)
+                  ky = self.question_text(
+                      "Take the following response and reduce it to a single letter (B,C,D), if none of the above leave empty:" + ky)
+                  all_text += "\n Response: " + ky
+                  if len(ky) <= 1: break
+
+          if len(ky) and (ky.lower() in ['b', 'c', 'd']):
+              return ky, all_text
+          print(ii, all_text, "\n\nFailed to get real answer switching to next query if exist", )
+      return ky, all_text
 
 
 

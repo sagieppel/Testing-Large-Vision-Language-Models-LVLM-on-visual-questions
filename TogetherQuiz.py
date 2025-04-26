@@ -2,12 +2,18 @@ import cv2
 import os
 import random
 import numpy as np
-import openai_api_class
+import together_api_class
 import QuizMakingClass#_TEXT2TEXT as QuizMakingClass
 import queries
-# "chatgpt-4o-latest"
-#
-AI_bot = openai_api_class.openai_bot(model="o4-mini",details="high")
+
+# "meta-llama/Llama-3.2-90B-Vision-Instruct-Turbo",
+# "Qwen/Qwen2-VL-72B-Instruct",
+# #"Qwen/Qwen2.5-VL-72B-Instruct", # #Expensive #
+# "meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8",
+# #"meta-llama/Llama-4-Scout-17B-16E-Instruct",
+
+
+AI_bot = together_api_class.openai_bot(model="Qwen/Qwen2-VL-72B-Instruct",details="high")
 
 input_dir= r"test_images/"
 error_dir = r"test_results/"
