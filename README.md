@@ -16,6 +16,10 @@ See test_images folder for example.
 
 ![Example for quiz image made by QuizMakingClass.py identify which panel contain instance (3D shape) identical to the one in panel A](Figure1.jpg)
 
+ 
+
+![](/Figure1.jpg)
+
 # How to use:
 Get API keys and set the model API key in API_KEYS.py.
 
