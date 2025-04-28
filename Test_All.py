@@ -1,3 +1,4 @@
+# Test multiple models on multiple tests
 import cv2
 import os
 import random
@@ -17,8 +18,9 @@ if not os.path.exists(main_out_dir): os.mkdir(main_out_dir)
 
 inputs_dirs={"2d_textures":{"query":queries.Textures2D,"path":r"/media/deadcrow/SSD_480GB/segment_anything/2D_textures_matchig_test"},
              "2d_shapes":{"query":queries.Shapes2D,"path":r"/media/deadcrow/SSD_480GB/segment_anything/2D_Shape_Matching_Tests/"},
-              "3d_materials":{"query":queries.PbrMaterials2D,"path":r"/media/deadcrow/6TB/python_project/Can-large-vision-language-models-understand-materials-and-textures/All_Test"},
-              "3d_objects":{"query":queries.Objects3D,"path":r"/media/deadcrow/6TB/python_project/Can_LVM_See3D/All_Tests"}}
+             "3d_materials":{"query":queries.PbrMaterials2D,"path":r"/media/deadcrow/6TB/python_project/Can-large-vision-language-models-understand-materials-and-textures/All_Test"},
+             "3d_objects":{"query":queries.Objects3D,"path":r"/media/deadcrow/6TB/python_project/Can_LVM_See3D/All_Tests"}
+    }
 
 models_dic={
      "Qwen2_VL_72BInstruct":together_api_class.openai_bot(model="Qwen/Qwen2-VL-72B-Instruct",details="high"),
@@ -29,8 +31,6 @@ models_dic={
     "gemini_2_0_flash_thinking_exp": gemini_api_class.gemini_bot(model="gemini-2.0-flash-thinking-exp")
 }
 
-input_dir= r"/media/deadcrow/SSD_480GB/segment_anything/2D_Shape_Matching_Tests/Rotation_Textured_shape_Textured_Background"
-error_dir = r"/media/deadcrow/6TB/Data_zoo/together_quize/"
 save_error=True
 save_all=True
 skip_exists=True
@@ -50,7 +50,7 @@ for model_name in models_dic: # go ove ALL modelw
              if not os.path.isdir(input_dir): continue
              error_dir = out_dir + "//" + sdir + "//"
              if os.path.exists(error_dir + "/finish.txt") and skip_exists: continue
-             quiz_maker = QuizMakingClass.make_quize(main_dir=input_dir, max_img_per_mat=1)
+             quiz_maker = QuizMakingClass.make_quize(main_dir=input_dir, max_img_per_instance=1,max_img_total=200, max_instance_per_class=1)
              quiz_maker.run_test(model, ouput_dir=error_dir, save_error=save_error, save_all=save_all,queries=queries)
              fl=open(error_dir + "/finish.txt","w")
              fl.close()
